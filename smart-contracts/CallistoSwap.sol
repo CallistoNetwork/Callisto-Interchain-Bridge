@@ -112,6 +112,7 @@ contract CallistoSwap {
 	}
 
 	function mintComplete (bytes32 _id, uint8 _toChain) public onlyAuthority {
+        require(txStatus[_id] == uint8(Status.Pending));
 		require(!authorityApproved[_id][msg.sender]);
 		authorityApproving[_id]++;
 		authorityApproved[_id][msg.sender] = true;
@@ -126,6 +127,8 @@ contract CallistoSwap {
 
 	function withdraw(address payable _addressTo, string memory _addressFrom, uint _value, uint8 _fromChain, bytes32 _id) public onlyAuthority {
 		// make sure authority has not already signed for this withdraw
+		if (txStatus[_id] == 0) txStatus[_id] = uint8(Status.Pending);
+        require(txStatus[_id] == uint8(Status.Pending));
 		require(!authorityApproved[_id][msg.sender]);
 		authorityApproving[_id]++;
 		authorityApproved[_id][msg.sender] = true;
@@ -134,6 +137,7 @@ contract CallistoSwap {
 		// if enough authorities have signed, execute the withdraw
 		if(authorityApproving[_id] >= threshold) {
 			_addressTo.transfer(_value);
+			txStatus[_id] = uint8(Status.Complete);
 			emit WithdrawCLO(_id, _addressTo, _addressFrom, _value, _fromChain);
 		}
 	}
